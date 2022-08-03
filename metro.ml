@@ -781,3 +781,172 @@ let test4 =
 let test5 =
   kyori_wo_hyoji "myogadani" "korakuen" global_ekimei_list global_ekikan_list
   = "茗荷谷駅から後楽園駅までは 1.8 km です"
+
+(* 駅名、最短距離、手前の駅名のリスト *)
+type eki_t = {
+  namae : string; (* 駅名（漢字の文字列） *)
+  saitan_kyori : float; (* 最短距離（実数） *)
+  temae_list : string list; (* 駅名（漢字の文字列）のリスト *)
+}
+
+(* 目的：ekimei_t 型のリスト lst から eki_t 型のリストを作る *)
+(* make_eki_list : ekimei_t list -> eki_t list *)
+let rec make_eki_list lst =
+  match lst with
+  | [] -> []
+  | { kanji; kana; romaji = r; shozoku = s } :: rest ->
+      { namae = kanji; saitan_kyori = infinity; temae_list = [] }
+      :: make_eki_list rest
+
+(* テスト *)
+let test1 = make_eki_list [] = []
+
+let test2 =
+  make_eki_list
+    [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+  = [ { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] } ]
+
+let test3 =
+  make_eki_list
+    [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+      { kanji = "後楽園"; kana = "こうらくえん"; romaji = "korakuen"; shozoku = "丸ノ内線" };
+    ]
+  = [
+      { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
+    ]
+
+(* 目的：eki_t 型のリスト lst のうち始点 shiten のみ saitan_kyori が 0、temae_list は始点の駅名のみからなるリストにして初期化する *)
+(* let shokika : eki_t -> eki_t *)
+let rec shokika lst shiten =
+  match lst with
+  | [] -> []
+  | ({ namae = n; saitan_kyori = s; temae_list = t } as first) :: rest ->
+      let shokika_rest = shokika rest shiten in
+      if n = shiten then
+        { namae = n; saitan_kyori = 0.0; temae_list = [ n ] } :: shokika_rest
+      else first :: shokika_rest
+
+(* テスト *)
+let test1 = shokika [] "" = []
+let test2 = shokika [] "茗荷谷" = []
+
+let test3 =
+  shokika [ { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] } ] ""
+  = [ { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] } ]
+
+let test4 =
+  shokika [ { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] } ] "茗荷谷"
+  = [ { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] } ]
+
+let test5 =
+  shokika
+    [
+      { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
+    ]
+    "後楽園"
+  = [
+      { namae = "茗荷谷"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "後楽園"; saitan_kyori = 0.0; temae_list = [ "後楽園" ] };
+    ]
+
+(* 目的：ひらがな順の駅名のリスト lst に 駅名 ekimei を挿入したリストを返す *)
+(* insert ekimei_t list -> ekimei -> ekimei_t list *)
+let rec ekimei_insert lst ekimei =
+  match lst with
+  | [] -> [ ekimei ]
+  | ({
+       kanji = first_kanji;
+       kana = first_kana;
+       romaji = first_r;
+       shozoku = first_s;
+     } as first)
+    :: rest ->
+      let {
+        kanji = ekimei_kanji;
+        kana = ekimei_kana;
+        romaji = ekimei_r;
+        shozoku = ekimei_s;
+      } =
+        ekimei
+      in
+      if first_kana < ekimei_kana then first :: ekimei_insert rest ekimei
+      else ekimei :: first :: rest
+
+(* 目的：駅名のリスト lst をひらがな順に整列して返す *)
+(* ekimei_sort : ekimei_t list -> ekimei_t list *)
+let rec ekimei_ins_sort lst =
+  match lst with
+  | [] -> []
+  | first :: rest -> ekimei_insert (ekimei_ins_sort rest) first
+
+(* ekimei_t のリストをひらがなの列に整列し、さらに駅の重複を取り除く *)
+(* seiretsu : ekimei_t list -> ekimei_t list *)
+let rec seiretsu lst =
+  let lst_ins_sort = ekimei_ins_sort lst in
+  match lst_ins_sort with
+  | [] -> []
+  | [ first ] -> [ first ]
+  | ({
+       kanji = first_kanji;
+       kana = first_kana;
+       romaji = first_r;
+       shozoku = first_s;
+     } as first)
+    :: ({
+          kanji = second_kanji;
+          kana = second_kana;
+          romaji = second_r;
+          shozoku = second_s;
+        } as second)
+    :: rest ->
+      if first_kana = second_kana then first :: seiretsu rest
+      else first :: seiretsu (second :: rest)
+
+(* テスト *)
+let test1 =
+  seiretsu
+    [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+  = [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+
+let test2 =
+  seiretsu
+    [
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+  = [
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+
+let test3 =
+  seiretsu
+    [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+    ]
+  = [
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
+
+let test4 =
+  seiretsu
+    [
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "有楽町線" };
+    ]
+  = [
+      { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
+      { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
+    ]
