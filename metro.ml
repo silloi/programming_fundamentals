@@ -950,3 +950,73 @@ let test4 =
       { kanji = "池袋"; kana = "いけぶくろ"; romaji = "ikebukuro"; shozoku = "丸ノ内線" };
       { kanji = "茗荷谷"; kana = "みょうがだに"; romaji = "myogadani"; shozoku = "丸ノ内線" };
     ]
+
+(* 直前に確定した駅 p と未確定の駅 q が直接つながっていたら最短距離と手前リストを必要に応じて更新し、でなければ q をそのまま返す *)
+(* koushin1 : eki_t -> eki_t -> eki_t *)
+let koushin1 p q =
+  match (p, q) with
+  | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+      { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
+      let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
+      if ekikan_kyori = infinity then q
+      else if ekikan_kyori < q_s then
+        {
+          namae = q_n;
+          saitan_kyori = ekikan_kyori;
+          temae_list = p_n :: q_n :: q_t;
+        }
+      else q
+
+(* テスト *)
+let test1 =
+  koushin1
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "池袋"; saitan_kyori = infinity; temae_list = [] }
+  = { namae = "池袋"; saitan_kyori = infinity; temae_list = [] }
+
+let test2 =
+  koushin1
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] }
+  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] }
+
+let test3 =
+  koushin1
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [] }
+  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [] }
+
+let test4 =
+  koushin1
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "後楽園"; saitan_kyori = 0.1; temae_list = [] }
+  = { namae = "後楽園"; saitan_kyori = 0.1; temae_list = [] }
+
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> eki_t list *)
+let koushin p v = List.map (koushin1 p) v
+
+(* テスト *)
+let test1 =
+  koushin
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
+  = [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
+
+let test2 =
+  koushin
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    [ { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] } ]
+  = [ { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] } ]
+
+let test3 =
+  koushin
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    [
+      { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
+    ]
+  = [
+      { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] };
+    ]
