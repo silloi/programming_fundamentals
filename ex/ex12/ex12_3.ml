@@ -6,7 +6,7 @@ type eki_t = {
 }
 
 (* 目的：eki_t 型のリスト lst のうち始点 shiten のみ saitan_kyori が 0、temae_list は始点の駅名のみからなるリストにして初期化する *)
-(* let shokika : eki_t -> eki_t *)
+(* let shokika : eki_t list -> string -> eki_t list *)
 let rec shokika lst shiten =
   match lst with
   | [] -> []

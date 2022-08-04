@@ -820,7 +820,7 @@ let test3 =
     ]
 
 (* 目的：eki_t 型のリスト lst のうち始点 shiten のみ saitan_kyori が 0、temae_list は始点の駅名のみからなるリストにして初期化する *)
-(* let shokika : eki_t -> eki_t *)
+(* let shokika : eki_t list -> string -> eki_t list *)
 let rec shokika lst shiten =
   match lst with
   | [] -> []
@@ -1020,3 +1020,75 @@ let test3 =
       { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
       { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] };
     ]
+
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> eki_t list *)
+let koushin p v =
+  (* 直前に確定した駅 p と未確定の駅 q が直接つながっていたら最短距離と手前リストを必要に応じて更新し、でなければ q をそのまま返す *)
+  (* koushin1 : eki_t -> eki_t -> eki_t *)
+  let koushin1 p q =
+    match (p, q) with
+    | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+        { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
+        let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
+        if ekikan_kyori = infinity then q
+        else if ekikan_kyori < q_s then
+          {
+            namae = q_n;
+            saitan_kyori = ekikan_kyori;
+            temae_list = p_n :: q_n :: q_t;
+          }
+        else q
+  in
+  List.map (koushin1 p) v
+
+(* 目的：ekimei_t 型のリスト lst から eki_t 型のリストを作る *)
+(* make_eki_list : ekimei_t list -> eki_t list *)
+let make_eki_list lst =
+  List.map
+    (fun ekimei ->
+      match ekimei with
+      | { kanji; kana; romaji = r; shozoku = s } ->
+          { namae = kanji; saitan_kyori = infinity; temae_list = [] })
+    lst
+
+(* 目的：eki_t 型のリスト lst のうち始点 shiten のみ saitan_kyori が 0、temae_list は始点の駅名のみからなるリストにして初期化する *)
+(* let shokika : eki_t list -> string -> eki_t list *)
+let shokika lst shiten =
+  List.map (fun eki ->
+      match eki with
+      | { namae = n; saitan_kyori = s; temae_list = t } ->
+          if n = shiten then
+            { namae = n; saitan_kyori = 0.0; temae_list = [ n ] }
+          else eki)
+
+(* make_eki_list と shokika を一度にやってしまう *)
+(* make_initial_eki_list -> ekimei_t list -> string -> eki_t list *)
+let make_initial_eki_list lst shiten =
+  List.map
+    (fun ekimei ->
+      match ekimei with
+      | { kanji; kana; romaji = r; shozoku = s } ->
+          if kanji = shiten then
+            { namae = kanji; saitan_kyori = 0.0; temae_list = [ kanji ] }
+          else { namae = kanji; saitan_kyori = infinity; temae_list = [] })
+    lst
+
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> eki_t list *)
+let koushin p v =
+  List.map
+    (fun q ->
+      match (p, q) with
+      | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+          { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
+          let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
+          if ekikan_kyori = infinity then q
+          else if ekikan_kyori < q_s then
+            {
+              namae = q_n;
+              saitan_kyori = ekikan_kyori;
+              temae_list = p_n :: q_n :: q_t;
+            }
+          else q)
+    v

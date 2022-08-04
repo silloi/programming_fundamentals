@@ -4,9 +4,25 @@
                       （rest が自己参照のケース）
    という形 *)
 
+(* 目的：first と rest_result を加える *)
+(* add_int : int -> int -> int *)
+let add_int first rest_result = first + rest_result
+
 (* 目的：受け取ったリスト lst の各要素の和を求める *)
 (* sum : int list -> int *)
 let rec sum lst = match lst with [] -> 0 | first :: rest -> first + sum rest
+let sum lst = List.fold_right add_int lst 0
+
+let sum lst =
+  (* 目的：first と rest_result を加える *)
+  (* add_int : int -> int -> int *)
+  let add_int first rest_result = first + rest_result in
+  List.fold_right add_int lst 0
+
+let sum lst =
+  List.fold_right (fun first rest_result -> first + rest_result) lst 0
+
+let sum lst = List.fold_right ( + ) lst 0
 
 (* テスト *)
 let test1 = sum [] = 0
