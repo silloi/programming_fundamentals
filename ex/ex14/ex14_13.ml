@@ -44,11 +44,11 @@ let koushin p v =
           { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
           let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
           if ekikan_kyori = infinity then q
-          else if ekikan_kyori < q_s then
+          else if p_s +. ekikan_kyori < q_s then
             {
               namae = q_n;
-              saitan_kyori = ekikan_kyori;
-              temae_list = p_n :: q_n :: q_t;
+              saitan_kyori = p_s +. ekikan_kyori;
+              temae_list = q_n :: p_t;
             }
           else q)
     v

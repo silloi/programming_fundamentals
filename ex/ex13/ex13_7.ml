@@ -11,7 +11,7 @@ type ekikan_t = {
 let global_ekikan_list =
   [
     { kiten = "茗荷谷"; shuten = "後楽園"; keiyu = "丸ノ内線"; kyori = 1.8; jikan = 2 };
-    { kiten = "後楽園"; shuten = "本郷三丁目"; keiyu = "丸ノ内線"; kyori = 0.8; jikan = 1 };
+    { kiten = "新大塚"; shuten = "茗荷谷"; keiyu = "丸ノ内線"; kyori = 1.2; jikan = 2 };
     { kiten = "池袋"; shuten = "新大塚"; keiyu = "丸ノ内線"; kyori = 1.8; jikan = 3 };
   ]
 
@@ -42,11 +42,11 @@ let koushin1 p q =
       { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
       let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
       if ekikan_kyori = infinity then q
-      else if ekikan_kyori < q_s then
+      else if p_s +. ekikan_kyori < q_s then
         {
           namae = q_n;
-          saitan_kyori = ekikan_kyori;
-          temae_list = p_n :: q_n :: q_t;
+          saitan_kyori = p_s +. ekikan_kyori;
+          temae_list = q_n :: p_t;
         }
       else q
 
@@ -57,24 +57,20 @@ let koushin p v = List.map (koushin1 p) v
 (* テスト *)
 let test1 =
   koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
-  = [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
+    []
+  = []
 
 let test2 =
   koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    [ { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] } ]
-  = [ { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] } ]
-
-let test3 =
-  koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
     [
+      { namae = "茗荷谷"; saitan_kyori = 1.8; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
       { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
-      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
     ]
   = [
-      { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
-      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] };
+      { namae = "茗荷谷"; saitan_kyori = 1.8; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
+      { namae = "池袋"; saitan_kyori = 3.0; temae_list = [ "池袋"; "新大塚"; "茗荷谷" ] };
     ]

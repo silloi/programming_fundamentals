@@ -11,7 +11,7 @@ type ekikan_t = {
 let global_ekikan_list =
   [
     { kiten = "茗荷谷"; shuten = "後楽園"; keiyu = "丸ノ内線"; kyori = 1.8; jikan = 2 };
-    { kiten = "後楽園"; shuten = "本郷三丁目"; keiyu = "丸ノ内線"; kyori = 0.8; jikan = 1 };
+    { kiten = "新大塚"; shuten = "茗荷谷"; keiyu = "丸ノ内線"; kyori = 1.2; jikan = 2 };
     { kiten = "池袋"; shuten = "新大塚"; keiyu = "丸ノ内線"; kyori = 1.8; jikan = 3 };
   ]
 
@@ -45,11 +45,11 @@ let koushin p v =
         { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
         let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
         if ekikan_kyori = infinity then q
-        else if ekikan_kyori < q_s then
+        else if p_s +. ekikan_kyori < q_s then
           {
             namae = q_n;
-            saitan_kyori = ekikan_kyori;
-            temae_list = p_n :: q_n :: q_t;
+            saitan_kyori = p_s +. ekikan_kyori;
+            temae_list = q_n :: p_t;
           }
         else q
   in

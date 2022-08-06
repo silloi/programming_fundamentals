@@ -724,7 +724,7 @@ let rec romaji_to_kanji ekimei lst1 =
       if r = ekimei then kanji else romaji_to_kanji ekimei rest
 
 (* テスト *)
-let test1 = romaji_to_kanji "myogadani" global_ekimei_list = ""
+(* let test1 = romaji_to_kanji "myogadani" global_ekimei_list = "" *)
 let test2 = romaji_to_kanji "myogadani" global_ekimei_list = "茗荷谷"
 let test2 = romaji_to_kanji "korakuen" global_ekimei_list = "後楽園"
 
@@ -959,34 +959,40 @@ let koushin1 p q =
       { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
       let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
       if ekikan_kyori = infinity then q
-      else if ekikan_kyori < q_s then
+      else if p_s +. ekikan_kyori < q_s then
         {
           namae = q_n;
-          saitan_kyori = ekikan_kyori;
-          temae_list = p_n :: q_n :: q_t;
+          saitan_kyori = p_s +. ekikan_kyori;
+          temae_list = q_n :: p_t;
         }
       else q
 
 (* テスト *)
 let test1 =
   koushin1
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
     { namae = "池袋"; saitan_kyori = infinity; temae_list = [] }
-  = { namae = "池袋"; saitan_kyori = infinity; temae_list = [] }
+    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+  = { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
 
 let test2 =
   koushin1
     { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] }
-  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] }
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
+  = { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
 
 let test3 =
   koushin1
     { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [] }
-  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [] }
+    { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] }
+  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] }
 
 let test4 =
+  koushin1
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
+    { namae = "池袋"; saitan_kyori = infinity; temae_list = [] }
+  = { namae = "池袋"; saitan_kyori = 3.0; temae_list = [ "池袋"; "新大塚"; "茗荷谷" ] }
+
+let test5 =
   koushin1
     { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
     { namae = "後楽園"; saitan_kyori = 0.1; temae_list = [] }
@@ -999,26 +1005,22 @@ let koushin p v = List.map (koushin1 p) v
 (* テスト *)
 let test1 =
   koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
-  = [ { namae = "池袋"; saitan_kyori = infinity; temae_list = [] } ]
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
+    []
+  = []
 
 let test2 =
   koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
-    [ { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] } ]
-  = [ { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] } ]
-
-let test3 =
-  koushin
-    { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+    { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
     [
+      { namae = "茗荷谷"; saitan_kyori = 1.8; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
       { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
-      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
     ]
   = [
-      { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
-      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "茗荷谷"; "後楽園" ] };
+      { namae = "茗荷谷"; saitan_kyori = 1.8; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
+      { namae = "池袋"; saitan_kyori = 3.0; temae_list = [ "池袋"; "新大塚"; "茗荷谷" ] };
     ]
 
 (* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
@@ -1032,11 +1034,11 @@ let koushin p v =
         { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
         let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
         if ekikan_kyori = infinity then q
-        else if ekikan_kyori < q_s then
+        else if p_s +. ekikan_kyori < q_s then
           {
             namae = q_n;
-            saitan_kyori = ekikan_kyori;
-            temae_list = p_n :: q_n :: q_t;
+            saitan_kyori = p_s +. ekikan_kyori;
+            temae_list = q_n :: p_t;
           }
         else q
   in
@@ -1084,11 +1086,62 @@ let koushin p v =
           { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
           let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
           if ekikan_kyori = infinity then q
-          else if ekikan_kyori < q_s then
+          else if p_s +. ekikan_kyori < q_s then
             {
               namae = q_n;
-              saitan_kyori = ekikan_kyori;
-              temae_list = p_n :: q_n :: q_t;
+              saitan_kyori = p_s +. ekikan_kyori;
+              temae_list = q_n :: p_t;
+            }
+          else q)
+    v
+
+(* 目的：最短距離が昇順の駅のリスト lst に 駅 eki を挿入したリストを返す *)
+(* insert eki_t list -> eki_t -> eki_t list *)
+let rec eki_insert lst eki =
+  match lst with
+  | [] -> [ eki ]
+  | ({ namae = first_n; saitan_kyori = first_s; temae_list = first_t } as first)
+    :: rest ->
+      let { namae = eki_n; saitan_kyori = eki_s; temae_list = eki_t } = eki in
+      if first_s < eki_s then first :: eki_insert rest eki
+      else eki :: first :: rest
+
+(* 目的：駅のリスト lst を最短距離の昇順に整列して返す *)
+(* eki_sort : eki_t list -> eki_t list *)
+let rec eki_ins_sort lst =
+  match lst with
+  | [] -> []
+  | first :: rest -> eki_insert (eki_ins_sort rest) first
+
+(* 駅のリストを「最短距離最小の駅」と「最短距離最小の駅以外からなるリスト」に分離する *)
+(* saitan_wo_bunri : eki_t list -> eki_t * eki_t list *)
+let rec saitan_wo_bunri lst =
+  match lst with
+  | [] -> ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
+  | ({ namae = n; saitan_kyori = s; temae_list = t } as first) :: rest -> (
+      if rest = [] then (first, [])
+      else
+        let eki_sort = eki_ins_sort lst in
+        match eki_sort with
+        | [] ->
+            ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
+        | first :: rest -> (first, rest))
+
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> ekikan_t list -> eki_t list *)
+let koushin p v ekikan_lst =
+  List.map
+    (fun q ->
+      match (p, q) with
+      | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+          { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
+          let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
+          if ekikan_kyori = infinity then q
+          else if p_s +. ekikan_kyori < q_s then
+            {
+              namae = q_n;
+              saitan_kyori = p_s +. ekikan_kyori;
+              temae_list = q_n :: p_t;
             }
           else q)
     v
