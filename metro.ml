@@ -1135,7 +1135,7 @@ let koushin p v ekikan_lst =
       match (p, q) with
       | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
           { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) ->
-          let ekikan_kyori = get_ekikan_kyori p_n q_n global_ekikan_list in
+          let ekikan_kyori = get_ekikan_kyori p_n q_n ekikan_lst in
           if ekikan_kyori = infinity then q
           else if p_s +. ekikan_kyori < q_s then
             {
@@ -1145,3 +1145,100 @@ let koushin p v ekikan_lst =
             }
           else q)
     v
+
+(* 未確定の駅のリスト eki_lst と駅間のリスト ekikan_lst からダイクストラのアルゴリズムにしたがって各駅について最短距離と最短経路が正しく入ったリストを返す *)
+(* dijkstra_main : eki_t list -> ekikan_t list -> eki_t list *)
+let rec dijkstra_main eki_lst ekikan_lst =
+  match eki_lst with
+  | [] -> []
+  | first :: rest ->
+      let saitan, saitan_igai_lst = saitan_wo_bunri (first :: rest) in
+      let eki_lst2 = koushin saitan saitan_igai_lst ekikan_lst in
+      saitan :: dijkstra_main eki_lst2 ekikan_lst
+
+(* テスト *)
+
+let test1 =
+  dijkstra_main
+    [ { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] } ]
+    global_ekikan_list
+  = [ { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] } ]
+
+let test2 =
+  dijkstra_main
+    [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
+    ]
+    global_ekikan_list
+  = [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] };
+    ]
+
+let test3 =
+  dijkstra_main
+    [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
+    ]
+    global_ekikan_list
+  = [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] };
+    ]
+
+let test4 =
+  dijkstra_main
+    [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = infinity; temae_list = [] };
+      { namae = "新大塚"; saitan_kyori = 1.8; temae_list = [ "新大塚"; "茗荷谷" ] };
+      { namae = "池袋"; saitan_kyori = infinity; temae_list = [] };
+    ]
+    global_ekikan_list
+  = [
+      { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] };
+      { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] };
+      { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] };
+      { namae = "池袋"; saitan_kyori = 3.0; temae_list = [ "池袋"; "新大塚"; "茗荷谷" ] };
+    ]
+
+(* 始点の駅 shiten から終点の駅 shuten までの最短路を求める *)
+(* dijkstra : string -> string -> eki_t *)
+let dijkstra shiten shuten =
+  let seiretsu_result = seiretsu global_ekimei_list in
+  let shiten_kanji, shuten_kanji =
+    ( romaji_to_kanji shiten global_ekimei_list,
+      romaji_to_kanji shuten global_ekimei_list )
+  in
+  let initial_eki_list = make_initial_eki_list seiretsu_result shiten_kanji in
+  let dijkstra_result = dijkstra_main initial_eki_list global_ekikan_list in
+  (* 終点の駅名に一致する駅を見つける *)
+  (* find_shuten : eki_t list -> string -> eki_t *)
+  let rec find_shuten lst shuten =
+    match lst with
+    | [] -> { namae = ""; saitan_kyori = infinity; temae_list = [] }
+    | ({ namae = n; saitan_kyori = s; temae_list = t } as first) :: rest ->
+        if n = shuten_kanji then first else find_shuten rest shuten
+  in
+  find_shuten dijkstra_result shuten
+
+(* テスト *)
+let test1 =
+  dijkstra "myogadani" "myogadani"
+  = { namae = "茗荷谷"; saitan_kyori = 0.0; temae_list = [ "茗荷谷" ] }
+
+let test2 =
+  dijkstra "myogadani" "korakuen"
+  = { namae = "後楽園"; saitan_kyori = 1.8; temae_list = [ "後楽園"; "茗荷谷" ] }
+
+let test3 =
+  dijkstra "myogadani" "shinotsuka"
+  = { namae = "新大塚"; saitan_kyori = 1.2; temae_list = [ "新大塚"; "茗荷谷" ] }
+
+let test4 =
+  dijkstra "myogadani" "ikebukuro"
+  = { namae = "池袋"; saitan_kyori = 3.0; temae_list = [ "池袋"; "新大塚"; "茗荷谷" ] }
