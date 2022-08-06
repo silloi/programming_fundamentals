@@ -1,5 +1,3 @@
-(* XXXXXXXXXX *)
-
 (* 駅名、最短距離、手前の駅名のリスト *)
 type eki_t = {
   namae : string; (* 駅名（漢字の文字列） *)
@@ -7,54 +5,23 @@ type eki_t = {
   temae_list : string list; (* 駅名（漢字の文字列）のリスト *)
 }
 
-(* 目的：最短距離が昇順の駅のリスト lst に 駅 eki を挿入したリストを返す *)
-(* insert eki_t list -> eki_t -> eki_t list *)
-let rec eki_insert lst eki =
-  match lst with
-  | [] -> [ eki ]
-  | ({ namae = first_n; saitan_kyori = first_s; temae_list = first_t } as first)
-    :: rest ->
-      let { namae = eki_n; saitan_kyori = eki_s; temae_list = eki_t } = eki in
-      if first_s < eki_s then first :: eki_insert rest eki
-      else eki :: first :: rest
-
-(* 目的：駅のリスト lst を最短距離の昇順に整列して返す *)
-(* eki_sort : eki_t list -> eki_t list *)
-let rec eki_ins_sort lst =
-  match lst with
-  | [] -> []
-  | first :: rest -> eki_insert (eki_ins_sort rest) first
-
 (* 駅のリストを「最短距離最小の駅」と「最短距離最小の駅以外からなるリスト」に分離する *)
 (* saitan_wo_bunri : eki_t list -> eki_t * eki_t list *)
-let rec saitan_wo_bunri lst =
-  (* let swap_eki_saitan first rest_result =
-       match first with ({ namae = first_n; saitan_kyori = first_s; temae_list = first_t }, first_result) ->
-         match rest_result with ({ namae = rest_result_n; saitan_kyori = rest_result_s; temae_list = rest_result_t }, rest_result_result) ->
-       if first_s < rest_result_s then (first, rest_result) else (rest_result, first) in
-     List.fold_right swap_eki_saitan ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, list) ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, list) *)
+let saitan_wo_bunri lst =
   match lst with
   | [] -> ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
-  | ({ namae = n; saitan_kyori = s; temae_list = t } as first) :: rest -> (
-      if rest = [] then (first, [])
-      else
-        let eki_ins_sort lst =
-          List.fold_right
-            (fun ({
-                    namae = first_n;
-                    saitan_kyori = first_s;
-                    temae_list = first_t;
-                  } as first)
-                 ({ namae = rest_n; saitan_kyori = rest_s; temae_list = rest_t }
-                 as rest_result) ->
-              if first_s < rest_s then first else rest_result)
-            []
-        in
-        let eki_sort = eki_ins_sort lst in
-        match eki_sort with
-        | [] ->
-            ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
-        | first :: rest -> (first, rest))
+  | first :: rest ->
+      List.fold_right
+        (fun first (p, v) ->
+          match (first, p) with
+          | ( { namae = first_n; saitan_kyori = first_s; temae_list = first_t },
+              {
+                namae = second_n;
+                saitan_kyori = second_s;
+                temae_list = second_t;
+              } ) ->
+              if first_s < second_s then (first, p :: v) else (p, first :: v))
+        rest (first, [])
 
 let test1 =
   saitan_wo_bunri

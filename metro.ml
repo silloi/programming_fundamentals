@@ -1095,37 +1095,23 @@ let koushin p v =
           else q)
     v
 
-(* 目的：最短距離が昇順の駅のリスト lst に 駅 eki を挿入したリストを返す *)
-(* insert eki_t list -> eki_t -> eki_t list *)
-let rec eki_insert lst eki =
-  match lst with
-  | [] -> [ eki ]
-  | ({ namae = first_n; saitan_kyori = first_s; temae_list = first_t } as first)
-    :: rest ->
-      let { namae = eki_n; saitan_kyori = eki_s; temae_list = eki_t } = eki in
-      if first_s < eki_s then first :: eki_insert rest eki
-      else eki :: first :: rest
-
-(* 目的：駅のリスト lst を最短距離の昇順に整列して返す *)
-(* eki_sort : eki_t list -> eki_t list *)
-let rec eki_ins_sort lst =
-  match lst with
-  | [] -> []
-  | first :: rest -> eki_insert (eki_ins_sort rest) first
-
 (* 駅のリストを「最短距離最小の駅」と「最短距離最小の駅以外からなるリスト」に分離する *)
 (* saitan_wo_bunri : eki_t list -> eki_t * eki_t list *)
-let rec saitan_wo_bunri lst =
+let saitan_wo_bunri lst =
   match lst with
   | [] -> ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
-  | ({ namae = n; saitan_kyori = s; temae_list = t } as first) :: rest -> (
-      if rest = [] then (first, [])
-      else
-        let eki_sort = eki_ins_sort lst in
-        match eki_sort with
-        | [] ->
-            ({ namae = ""; saitan_kyori = infinity; temae_list = [ "" ] }, [])
-        | first :: rest -> (first, rest))
+  | first :: rest ->
+      List.fold_right
+        (fun first (p, v) ->
+          match (first, p) with
+          | ( { namae = first_n; saitan_kyori = first_s; temae_list = first_t },
+              {
+                namae = second_n;
+                saitan_kyori = second_s;
+                temae_list = second_t;
+              } ) ->
+              if first_s < second_s then (first, p :: v) else (p, first :: v))
+        rest (first, [])
 
 (* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
 (* koushin : eki_t -> eki_t list -> ekikan_t list -> eki_t list *)
