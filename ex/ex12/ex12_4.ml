@@ -7,7 +7,7 @@ type ekimei_t = {
 }
 
 (* 目的：ひらがな順の駅名のリスト lst に 駅名 ekimei を挿入したリストを返す *)
-(* insert ekimei_t list -> ekimei -> ekimei_t list *)
+(* insert ekimei_t list -> ekimei_t -> ekimei_t list *)
 let rec ekimei_insert lst ekimei =
   match lst with
   | [] -> [ ekimei ]
