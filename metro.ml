@@ -715,11 +715,15 @@ let test3 =
     { kanji = "神保町"; kana = "じんぼうちょう"; romaji = "jinbocho"; shozoku = "半蔵門線" }
   = "半蔵門線，神保町（じんぼうちょう）"
 
+(* 駅が存在しないことを示す例外 *)
+exception No_such_station of string
+
 (* 目的：ローマ字の駅名と駅名リストを受け取ったら駅の漢字表記を文字列で返す *)
+(* みつからないときには No_such_station という例外を発生する *)
 (* romaji_to_kanji : string -> ekimei_t list -> string *)
 let rec romaji_to_kanji ekimei lst1 =
   match lst1 with
-  | [] -> ""
+  | [] -> raise (No_such_station ekimei)
   | { kanji; kana; romaji = r; shozoku = s } :: rest ->
       if r = ekimei then kanji else romaji_to_kanji ekimei rest
 
@@ -1132,6 +1136,26 @@ let koushin p v ekikan_lst =
           else q)
     v
 
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> ekikan_t list -> eki_t list *)
+let koushin p v ekikan_lst =
+  List.map
+    (fun q ->
+      match (p, q) with
+      | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+          { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) -> (
+          try
+            let ekikan_kyori = get_ekikan_kyori p_n q_n ekikan_lst in
+            if p_s +. ekikan_kyori < q_s then
+              {
+                namae = q_n;
+                saitan_kyori = p_s +. ekikan_kyori;
+                temae_list = q_n :: p_t;
+              }
+            else q
+          with Not_found -> q))
+    v
+
 (* 未確定の駅のリスト eki_lst と駅間のリスト ekikan_lst からダイクストラのアルゴリズムにしたがって各駅について最短距離と最短経路が正しく入ったリストを返す *)
 (* dijkstra_main : eki_t list -> ekikan_t list -> eki_t list *)
 let rec dijkstra_main eki_lst ekikan_lst =
@@ -1449,3 +1473,43 @@ let rec saitan_wo_bunri eki eki_list =
       | ( { namae = eki_n; saitan_kyori = eki_s; temae_list = eki_t },
           { namae = p_n; saitan_kyori = p_s; temae_list = p_t } ) ->
           if eki_s < p_s then (eki, p :: v) else (p, eki :: v))
+
+(* 目的：駅名 ekimei0 と駅名と距離の組のリスト lst を受け取ると、その駅までの距離を返す *)
+(* みつからないときには例外 Not_found を発生する *)
+(* assoc : string -> (string * float) list -> float *)
+let rec assoc ekimei0 lst =
+  match lst with
+  | [] -> raise Not_found
+  | (ekimei, kyori) :: rest ->
+      if ekimei0 = ekimei then kyori else assoc ekimei0 rest
+
+(* 目的：漢字の駅名 ekimei1 と ekimei2、駅間の木 ekikan_tree を受け取ったら 2 駅間の距離を返す *)
+(* get_ekikan_kyori : string -> string -> ekikan_tree_t -> float *)
+let rec get_ekikan_kyori ekimei1 ekimei2 ekikan_tree =
+  match ekikan_tree with
+  | Empty -> raise Not_found
+  | Node (t1, (ekimei0, lst), t2) ->
+      if ekimei0 = ekimei1 then assoc ekimei2 lst
+      else if ekimei0 = ekimei2 then assoc ekimei1 lst
+      else if ekimei1 < ekimei0 then get_ekikan_kyori ekimei1 ekimei2 t1
+      else get_ekikan_kyori ekimei1 ekimei2 t2
+
+(* 直前に確定した駅 p と未確定の駅のリスト v を受け取ったら、必要な更新処理を行った後の未確定の駅のリストを返す *)
+(* koushin : eki_t -> eki_t list -> ekikan_t list -> eki_t list *)
+let koushin p v ekikan_tree =
+  List.map
+    (fun q ->
+      match (p, q) with
+      | ( { namae = p_n; saitan_kyori = p_s; temae_list = p_t },
+          { namae = q_n; saitan_kyori = q_s; temae_list = q_t } ) -> (
+          try
+            let ekikan_kyori = get_ekikan_kyori p_n q_n ekikan_tree in
+            if p_s +. ekikan_kyori < q_s then
+              {
+                namae = q_n;
+                saitan_kyori = p_s +. ekikan_kyori;
+                temae_list = q_n :: p_t;
+              }
+            else q
+          with Not_found -> q))
+    v
