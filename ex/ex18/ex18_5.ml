@@ -57,15 +57,6 @@ type ekikan_tree_t =
                           （t1 と t2 が自己参照のケース）
    という形 *)
 
-(* 駅と駅の接続情報 *)
-type ekikan_t = {
-  kiten : string; (* 起点の駅名 *)
-  shuten : string; (* 終点の駅名 *)
-  keiyu : string; (* 経由する路線名 *)
-  kyori : float; (* 2駅間の距離（km、実数） *)
-  jikan : int; (* 所要時間（分、整数） *)
-}
-
 (* 目的：駅名 ekimei0 と駅名と距離の組のリスト lst を受け取ると、その駅までの距離を返す *)
 (* みつからないときには例外 Not_found を発生する *)
 (* assoc : string -> (string * float) list -> float *)

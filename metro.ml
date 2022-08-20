@@ -1513,3 +1513,77 @@ let koushin p v ekikan_tree =
             else q
           with Not_found -> q))
     v
+
+(* 2 分探索木を現すモジュール *)
+module Tree : sig
+  type ('a, 'b) t
+  (* キーが 'a 型、値が 'b 型の木の型。型の中身は非公開 *)
+
+  val empty : ('a, 'b) t
+  (* 使い方：empty *)
+  (* 空の木 *)
+
+  val insert : ('a, 'b) t -> 'a -> 'b -> ('a, 'b) t
+  (* 使い方：insert tree key value *)
+  (* 木 tree にキー key と値 value を挿入した木を返す *)
+  (* キーがすでに存在していたら新しい値に置き換える *)
+
+  val search : ('a, 'b) t -> 'a -> 'b
+  (* 使い方：search tree key *)
+  (* 木 tree の中からキー key に対応する値を探して返す *)
+  (* みつからなければ Not_found を raise する *)
+end = struct
+  (* 2 分探索木を表す型 *)
+  type ('a, 'b) t = Empty | Node of ('a, 'b) t * 'a * 'b * ('a, 'b) t
+
+  (* 空の木 *)
+  let empty = Empty
+
+  (* 目的：tree にキーが k で値が v を挿入した木を返す *)
+  (* insert : ('a, 'b) t -> 'a -> 'b -> ('a, 'b) t *)
+  let rec insert tree k v =
+    match tree with
+    | Empty -> Node (Empty, k, v, Empty)
+    | Node (left, key, value, right) ->
+        if k = key then Node (left, key, v, right)
+        else if k < key then Node (insert left k v, key, value, right)
+        else Node (left, key, value, insert right k v)
+
+  (* 目的：tree の中のキー k に対応する値を探して返す *)
+  (* みつからなければ例外 Not_found を起こす *)
+  (* search : ('a, 'b) t -> 'a -> 'b *)
+  let rec search tree k =
+    match tree with
+    | Empty -> raise Not_found
+    | Node (left, key, value, right) ->
+        if k = key then value
+        else if k < key then search left k
+        else search right k
+end
+
+(* 目的：漢字の駅名 ekimei1 と ekimei2、駅間の 2 分探索木 ekikan_tree を受け取ったら 2 駅間の距離を返す *)
+(* みつからなかったら例外 Not_found を起こす *)
+(* get_ekikan_kyori : string -> string -> (string * (string * float) list) Tree.t -> float *)
+let rec get_ekikan_kyori ekimei1 ekimei2 ekikan_tree =
+  let lst = Tree.search ekikan_tree ekimei1 in
+  List.assoc ekimei2 lst
+
+(* 目的：受け取った kiten、shuten、kyori を ekikan_tree に挿入した木を返す *)
+(* insert1 : (string * (string * float) list) Tree.t -> string -> string -> float -> (string * (string * float) list) Tree.t *)
+let rec insert1 ekikan_tree kiten shuten kyori =
+  let lst = try Tree.search ekikan_tree kiten with Not_found -> [] in
+  Tree.insert ekikan_tree kiten ((shuten, kyori) :: lst)
+
+(* 目的：木 ekikan_tree に駅間 ekikan を挿入した木を返す *)
+(* insert_ekikan : (string * (string * float) list) Tree.t -> ekikan_t -> (string * (string * float) list) Tree.t *)
+let rec insert_ekikan ekikan ekikan_tree =
+  match ekikan with
+  | { kiten = ki; shuten = s; keiyu = ke; kyori = ky; jikan = j } ->
+      insert1 (insert1 ekikan_tree s ki ky) ki s ky
+
+(* 目的：木 ekikan_tree に駅間のリスト ekikan_list に含まれる駅間をすべて挿入した木を返す *)
+(* inserts_ekikan : (string * (string * float) list) Tree.t -> ekikan_t list -> (string * (string * float) list) Tree.t *)
+let inserts_ekikan ekikan_tree ekikan_list =
+  List.fold_right insert_ekikan ekikan_list ekikan_tree
+
+let global_ekikan_tree = inserts_ekikan Tree.empty global_ekikan_list
