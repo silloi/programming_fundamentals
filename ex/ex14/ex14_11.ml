@@ -26,9 +26,11 @@ let make_eki_list lst =
 (* 目的：eki_t 型のリスト lst のうち始点 shiten のみ saitan_kyori が 0、temae_list は始点の駅名のみからなるリストにして初期化する *)
 (* let shokika : eki_t list -> string -> eki_t list *)
 let shokika lst shiten =
-  List.map (fun eki ->
+  List.map
+    (fun eki ->
       match eki with
       | { namae = n; saitan_kyori = s; temae_list = t } ->
           if n = shiten then
             { namae = n; saitan_kyori = 0.0; temae_list = [ n ] }
           else eki)
+    lst

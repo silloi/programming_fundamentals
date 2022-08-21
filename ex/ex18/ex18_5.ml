@@ -11,7 +11,7 @@ type ekikan_t = {
 (* get_ekikan_kyori : string -> string -> ekikan_t list -> float *)
 let rec get_ekikan_kyori ekimei1 ekimei2 lst1 =
   match lst1 with
-  | [] -> raise Not_found
+  | [] -> infinity
   | { kiten; shuten; keiyu; kyori; jikan } :: rest ->
       if
         (ekimei1 = kiten && ekimei2 = shuten)
@@ -70,7 +70,7 @@ let rec assoc ekimei0 lst =
 (* get_ekikan_kyori : string -> string -> ekikan_tree_t -> float *)
 let rec get_ekikan_kyori ekimei1 ekimei2 ekikan_tree =
   match ekikan_tree with
-  | Empty -> raise Not_found
+  | Empty -> infinity
   | Node (t1, (ekimei0, lst), t2) ->
       if ekimei0 = ekimei1 then assoc ekimei2 lst
       else if ekimei0 = ekimei2 then assoc ekimei1 lst

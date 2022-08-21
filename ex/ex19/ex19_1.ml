@@ -77,11 +77,13 @@ end = struct
 end
 
 (* 目的：漢字の駅名 ekimei1 と ekimei2、駅間の 2 分探索木 ekikan_tree を受け取ったら 2 駅間の距離を返す *)
-(* みつからなかったら例外 Not_found を起こす *)
+(* みつからなかったら infinity を返す *)
 (* get_ekikan_kyori : string -> string -> (string * (string * float) list) Tree.t -> float *)
 let rec get_ekikan_kyori ekimei1 ekimei2 ekikan_tree =
-  let lst = Tree.search ekikan_tree ekimei1 in
-  List.assoc ekimei2 lst
+  try
+    let lst = Tree.search ekikan_tree ekimei1 in
+    List.assoc ekimei2 lst
+  with Not_found -> infinity
 
 (* 目的：受け取った kiten、shuten、kyori を ekikan_tree に挿入した木を返す *)
 (* insert1 : (string * (string * float) list) Tree.t -> string -> string -> float -> (string * (string * float) list) Tree.t *)
