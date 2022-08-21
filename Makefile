@@ -1,4 +1,4 @@
-SOURCES = tree.mli tree.ml
-RESULT = my-tree
+SOURCES = metro.ml main.ml
+RESULT = metro
 OCAMLMAKEFILE = ~/workspace/ocaml-makefile/OCamlMakefile
 include $(OCAMLMAKEFILE)

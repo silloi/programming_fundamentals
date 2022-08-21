@@ -1016,6 +1016,19 @@ let rec dijkstra_main eki_lst ekikan_tree =
       let eki_lst2 = koushin saitan saitan_igai_lst ekikan_tree in
       saitan :: dijkstra_main eki_lst2 ekikan_tree
 
+let print_eki eki =
+  match eki with
+  | { namae = n; saitan_kyori = s; temae_list = t } ->
+      print_string (n ^ "までの最短距離は ");
+      print_float s;
+      print_string "km です。経由駅：";
+      List.iter
+        (fun s ->
+          print_newline ();
+          print_string s)
+        t;
+      print_newline ()
+
 (* 始点の駅 shiten から終点の駅 shuten までの最短路を求める *)
 (* dijkstra : string -> string -> eki_t *)
 let dijkstra shiten shuten =
