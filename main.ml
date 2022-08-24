@@ -1,7 +1,7 @@
 (* メイン関数 *)
 (* main : string -> string -> unit *)
-let main shiten shuten =
-  let result = Metro.dijkstra shiten shuten in
+let main kiten shuten =
+  let result = Metro.dijkstra kiten shuten in
   Metro.print_eki result
 (* 結果を表示する *)
 

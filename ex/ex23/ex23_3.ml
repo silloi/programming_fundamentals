@@ -1221,18 +1221,20 @@ let rec dijkstra_main eki_heap ekikan_tree index_tree =
     { namae = pn; saitan_kyori = ps; temae_list = pt }
     :: dijkstra_main eki_heap2 ekikan_tree index_tree
 
+(* 目的：eki_t 型のレコードをきれいに表示する *)
+(* print_eki : eki_t -> unit *)
 let print_eki eki =
   match eki with
-  | { namae = n; saitan_kyori = s; temae_list = t } ->
-      print_string (n ^ "までの最短距離は ");
-      print_float s;
-      print_string "km です。経由駅：";
-      List.iter
-        (fun s ->
-          print_newline ();
-          print_string s)
-        t;
-      print_newline ()
+  | { namae = n; saitan_kyori = s; temae_list = lst } -> (
+      match lst with
+      | [] -> assert false (* この場合は起こりえない *)
+      | [ a ] ->
+          print_string (a ^ "（" ^ string_of_float s ^ "km）");
+          print_newline ()
+      | a :: rest ->
+          List.fold_right (fun b () -> print_string (b ^ "、")) rest ();
+          print_string (a ^ "（" ^ string_of_float s ^ "km）");
+          print_newline ())
 
 (* 目的：受け取った eki_list から shuten のレコードを探し出す *)
 (* find : string -> eki_t list -> eki_t *)
