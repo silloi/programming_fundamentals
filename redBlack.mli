@@ -16,3 +16,12 @@ val search : ('a, 'b) t -> 'a -> 'b
 (* 使い方：search tree key *)
 (* 木 tree の中からキー key に対応する値を探して返す *)
 (* みつからなければ Not_found を raise する *)
+
+val traverse : ('a -> 'b -> 'c -> 'a) -> 'a -> ('b, 'c) t -> 'a
+(* 使い方：traverse f init tree *)
+(* 全てのノードを深さ優先で訪れる *)
+(* 初期値 init から始めて、各ノードで関数 f を順に適用する *)
+
+val length : ('a, 'b) t -> int
+(* 使い方：length tree *)
+(* 木の中にあるノードの数を求める *)

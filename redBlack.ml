@@ -48,3 +48,24 @@ let rec search rb_tree k =
       if k = key then value
       else if k < key then search left k
       else search right k
+
+(* 目的：全てのノードを深さ優先で訪れる *)
+(* 初期値 init から始めて、各ノードで関数 f を順に適用する *)
+(* ex23_3.ml で使用 *)
+(* traverse : ('a -> 'b -> 'c -> 'a) -> 'a -> ('b, 'c) t -> 'a *)
+let rec traverse f init tree =
+  match tree with
+  | Empty -> init
+  | Node (left, key, value, _, right) ->
+      let result1 = f init key value in
+      let result2 = traverse f result1 left in
+      let result3 = traverse f result2 right in
+      result3
+
+(* 目的：木の中にあるノードの数を求める *)
+(* ex23_3.ml で使用 *)
+(* length : ('a, 'b) t -> int *)
+let rec length tree =
+  match tree with
+  | Empty -> 0
+  | Node (left, key, value, _, right) -> length left + 1 + length right
